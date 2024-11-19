@@ -47,6 +47,13 @@ pendo.initialize({
     }
 });
 </script>
+<script>
+const host = document.querySelector("#shadow-host");
+const shadow = host.attachShadow({ mode: "open" });
+const span = document.createElement("span");
+span.textContent = "I'm in the shadow DOM";
+shadow.appendChild(span);
+</script>
   </head>
   <body>
     <div >
@@ -70,6 +77,7 @@ pendo.initialize({
       <div id="guide-container-min-fixed-dimen" style="min-height: 300px; min-width: 500px; border: 5px solid blue;">min fixed dimen</div>
       <div id="guide-container-no-dimen" style="border: 5px solid green;">no dimen</div>
       <div id="guide-container-max-fixed-dimen" style="max-height: 300px; max-width: 500px; border: 5px solid yellow;">max fixed dimen</div>
+      <div id="shadow-host" style="height: 300px; width: 500px; border: 5px solid green;">SHADOW!!</div>
     </div>
   </body>
 </html>
