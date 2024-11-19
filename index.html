@@ -48,11 +48,13 @@ pendo.initialize({
 });
 </script>
 <script>
-const host = document.querySelector("#shadow-host");
+  window.onLoad = function() {
+    const host = document.querySelector("#shadow-host");
 const shadow = host.attachShadow({ mode: "open" });
 const span = document.createElement("span");
 span.textContent = "I'm in the shadow DOM";
 shadow.appendChild(span);
+  }
 </script>
   </head>
   <body>
