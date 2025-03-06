@@ -50,13 +50,13 @@ function reRender() {
         const newElement = document.createElement('div');
         newElement.id = 'dynamic-content';
         newElement.textContent = `Updated at: ${new Date().toLocaleTimeString()}`;
-        document.body.insertBefore(newElement, document.querySelector('button'));
+        document.getElementById('base').insertBefore(newElement, document.getElementById('render-btn'));
     }, 100); // Re-add after a short delay
 }
 </script>
   </head>
   <body style="display: inline; position: relative;">
-    <div >
+    <div id="base">
       <h1 id="csm-header">Test Site</h1>
       
       <h2 id="hipster-header">Hipster Heading</h2>
@@ -75,7 +75,7 @@ function reRender() {
       <div id="pendo-guide-square" style="height: 300px; width: 500px; border: 5px solid red; overflow: hidden; float: right;"></div>
       <h2>Quick Re-Render Example</h2>
       <div id="dynamic-content">Click the button to update this text</div>
-      <button onclick="reRender()">Re-Render</button>
+      <button id="render-btn" onclick="reRender()">Re-Render</button>
     </div>
   </body>
 </html>
