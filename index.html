@@ -60,18 +60,82 @@ pendo.initialize({
 });
 
 function reRender() {
+    const delayMs = 100;
     const element = document.getElementById('dynamic-content');
+    const previousText = element.textContent; // Read before removal for the Pendo event below
     element.remove(); // Remove the element
     setTimeout(() => {
         const newElement = document.createElement('div');
         newElement.id = 'dynamic-content';
         newElement.textContent = `Updated at: ${new Date().toLocaleTimeString()}`;
         document.getElementById('base').insertBefore(newElement, document.getElementById('render-btn'));
-    }, 100); // Re-add after a short delay
+        // Pendo Track Event: the re-render finished and the new element is in the DOM. Clicks that
+        // fail (e.g. a second click before this timeout runs) never get here, so they aren't counted.
+        pendo.track('dynamic_content_rerendered', {
+            elementId: newElement.id,
+            renderedText: newElement.textContent,
+            previousText: previousText,
+            delayMs: delayMs
+        });
+    }, delayMs); // Re-add after a short delay
 }
 </script>
 <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key=dc4afdde-f15e-4734-822a-ff35c717c3cf">
 
+</script>
+<script>
+// Pendo Track Events for the Zendesk Web Widget (Classic) loaded by #ze-snippet above. The widget
+// renders inside Zendesk iframes, so Pendo can't auto-capture anything that happens in it.
+// #ze-snippet loads synchronously and defines zE, which queues these handlers until the widget is
+// ready; the check below skips them if the snippet was blocked or failed to load.
+// If the site moves to Zendesk Messaging, track opens with zE('messenger:on', 'open', ...) and
+// widgetType 'messenger' instead. Messaging has no userEvent or chat:start hooks, so
+// support_request_submitted and help_center_searched can't be captured client-side there.
+if (typeof window.zE === 'function') {
+    // Id of the section heading the visitor has scrolled to, or null if above the first one
+    const sectionInView = () => {
+        let current = null;
+        ['hipster-header', 'cupcake-header', 'pirate-header'].forEach((id) => {
+            const heading = document.getElementById(id);
+            if (heading && heading.getBoundingClientRect().top < window.innerHeight / 2) {
+                current = id;
+            }
+        });
+        return current;
+    };
+
+    // Visitor opened the support widget (top of the support funnel)
+    zE('webWidget:on', 'open', () => {
+        pendo.track('support_widget_opened', {
+            widgetType: 'webWidget',
+            sectionInView: sectionInView()
+        });
+    });
+
+    zE('webWidget:on', 'userEvent', (userEvent) => {
+        if (userEvent.action === 'Contact Form Submitted') {
+            // Visitor escalated via the contact form; form contents are deliberately not sent
+            pendo.track('support_request_submitted', {
+                channel: 'contact_form',
+                sectionInView: sectionInView()
+            });
+        } else if (userEvent.action === 'Help Center Search') {
+            // Free-text search term, trimmed and capped to stay within Pendo's property size limits
+            const term = userEvent.properties && userEvent.properties.term;
+            pendo.track('help_center_searched', {
+                searchTerm: typeof term === 'string' ? term.trim().slice(0, 100) : ''
+            });
+        }
+    });
+
+    // Visitor escalated by starting a live chat
+    zE('webWidget:on', 'chat:start', () => {
+        pendo.track('support_request_submitted', {
+            channel: 'chat',
+            sectionInView: sectionInView()
+        });
+    });
+}
 </script>
   </head>
   <body style="display: inline; position: relative;">
