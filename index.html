@@ -45,18 +45,49 @@ pendo.initialize({
 });
 
 function reRender() {
+    const rerenderDelayMs = 100;
     const element = document.getElementById('dynamic-content');
     element.remove(); // Remove the element
     setTimeout(() => {
         const newElement = document.createElement('div');
         newElement.id = 'dynamic-content';
-        newElement.textContent = `Updated at: ${new Date().toLocaleTimeString()}`;
+        const renderedAt = new Date().toLocaleTimeString();
+        newElement.textContent = `Updated at: ${renderedAt}`;
         document.getElementById('base').insertBefore(newElement, document.getElementById('render-btn'));
-    }, 100); // Re-add after a short delay
+        // Pendo Track Event: fires only once the replacement node is back in the DOM, so it counts
+        // completed re-renders rather than #render-btn clicks (a second click inside the delay
+        // window finds no #dynamic-content, throws, and never re-renders).
+        pendo.track('dynamic_content_rerendered', {
+            elementId: newElement.id,
+            renderedAt: renderedAt,
+            rerenderDelayMs: rerenderDelayMs,
+            triggerElementId: 'render-btn'
+        });
+    }, rerenderDelayMs); // Re-add after a short delay
 }
 </script>
 <script id="ze-snippet" src="https://static.zdassets.com/ekr/snippet.js?key=dc4afdde-f15e-4734-822a-ff35c717c3cf">
 
+</script>
+<script>
+// Pendo Track Event: the Zendesk widget renders inside its own iframes, so Pendo can't auto-capture
+// anything in it. Record completed support requests from the widget's userEvent callback
+// (Web Widget (Classic) API); open/close/minimise display changes are intentionally ignored.
+if (typeof window.zE === 'function') {
+    const supportChannelsByZendeskAction = new Map([
+        ['Contact Form Submitted', 'contact_form'],
+        ['Offline Message Sent', 'offline_message']
+    ]);
+    zE('webWidget:on', 'userEvent', (userEvent) => {
+        const supportChannel = userEvent && supportChannelsByZendeskAction.get(userEvent.action);
+        if (supportChannel) {
+            pendo.track('support_request_submitted', {
+                supportChannel: supportChannel,
+                zendeskAction: userEvent.action
+            });
+        }
+    });
+}
 </script>
   </head>
   <body style="display: inline; position: relative;">
